@@ -1,0 +1,212 @@
+    #!/bin/sh
+    echo "============================ Extracting Source Package =============================="
+    echo
+    if [ ! -f "eidolaPublicApp-1.0.2.tgz" ]
+    then
+        echo "Source package missing.Please place the source zip file and try again"
+        exit  
+    fi
+    if [ ! -f "/EidolaInstall" ]
+    then
+        sudo mkdir /EidolaInstall 
+    fi
+    if [ ! -f "/EidolaInstall/eidolaPublicApp" ]
+    then
+        sudo tar -xvf eidolaPublicApp-1.0.2.tgz -C /EidolaInstall
+    fi
+    cd /EidolaInstall
+    echo "============================ Source Package Extraction Done =============================="
+    echo
+    echo "============================ Updating Advanced Package Tool =============================="
+    echo
+    # sudo apt-get autoremove --purge && sudo apt-get autoclean
+    # sudo apt-get remove --auto-remove python-pyasn1-modules 
+    sudo apt-get update
+
+    echo "============================ Checking Python version installed ================================="
+    echo
+    ver=$(python3 -c"import sys; print(sys.version_info.major)")
+    if [ "$ver" -eq 3 ]
+    then
+        echo "====================Python3 is already installed ========================"
+        echo
+        alias python=python3
+        python --version
+    else
+        echo "============================= Python3 is not installed in your system ============================="
+        echo
+        sudo apt update
+        sudo apt install software-properties-common
+        sudo add-apt-repository ppa:deadsnakes/ppa
+        sudo apt install python3.7
+        echo "================ Successfully installed Python3 ==============="
+        echo
+        # apt-get update
+        # apt install python3
+    fi
+    echo "============================ Checking Node version installed ================================="
+    echo
+    if  which node > /dev/null
+    then
+        echo "============================ Node is already installed ================================="
+        node -v
+        echo
+    else
+            echo "============================= Node is not installed in your system ============================="
+            echo
+            sudo apt -y install curl dirmngr apt-transport-https lsb-release ca-certificates
+            curl -sL https://deb.nodesource.com/setup_12.x | sudo -E bash -
+            sudo apt -y install nodejs
+            echo "===================== Successfully installed node ==============="
+            echo
+    fi
+    
+    if  which nginx > /dev/null
+    then
+        echo "============================ nginx is already installed ================================="
+        nginx -v
+        echo
+    else
+            echo "============================= nginx is not installed in your system ============================="
+            echo
+            sudo apt-get install nginx
+            echo "===================== Successfully installed nginx ==============="
+            echo
+    fi
+
+    if  ! ng version > /dev/null 2>&1;
+    then
+        echo "===================== Angular could not be found!! Installing Angular... =====================" 
+        echo
+        sudo npm install -g @angular/cli
+        echo "==================== Successfully installed Angular ==========================="
+    else
+        echo "======================== Angular cli alreday installed ======================="
+        echo
+    fi
+    if  ! pm2 list > /dev/null 2>&1;
+    then
+        echo "=================== pm2 could not be found. Installing pm2... =========================="
+        echo
+        sudo npm install pm2@latest -g
+        echo "===================== Successfully installed pm2 =========================="
+        echo
+    else
+        echo "======================= pm2 alreday installed ================================"
+        echo
+    fi
+
+    cd eidolaPublicApp/eidolapublicapi
+    # sudo curl -O https://bootstrap.pypa.io/get-pip.py
+    # sudo python3 get-pip.py
+    if  ! pip3 --version > /dev/null 2>&1;
+    then
+        echo "===================== PIP could not be found!! Installing Angular... =====================" 
+        echo
+        sudo apt install python3-pip
+        echo "==================== Successfully installed PIP ==========================="
+    else
+        echo "======================== PIP cli alreday installed ======================="
+        echo
+    fi
+    alias pip=pip3
+    echo "========================== Upgrading PIP ===================================="
+    echo
+    sudo python3 -m pip install --upgrade pip
+    echo "================ Installing virtualenv =============================="
+    echo
+    sudo python3 -m pip install virtualenv
+    sudo python3 -m virtualenv eidolapublicenv
+    # sudo chmod 777 -R eidolapublicenv
+    . ./eidolapublicenv/bin/activate
+    echo "======================= Created Python virtual environment eidolapublicenv ======================"
+    echo
+    # install mysql
+    echo "========================= Installing all Python dependency libraries ======================"
+    echo
+    sudo apt-get install default-libmysqlclient-dev
+    # sudo pip install -r requirements.txt
+    pip install -r requirements.txt
+    echo "========================= Successfully installed all python dependency libraries ==============="
+    echo
+    #when migrations folder does not exists
+    if [ ! -d "migrations" ]
+    then
+        echo " No migration folder hence creating db for first time."
+        echo
+        python manage.py db init
+        echo "init done.."
+        python manage.py db migrate
+        echo "Database Migration done.."
+        python manage.py db upgrade
+        echo "upgrade done.."
+        echo
+    else
+        echo "found migrations folder."
+        echo
+    fi
+    echo "============================== Starting Eidola Public API on localhost:5000 ==================================="
+    echo
+    pm2 start manage.py --name EidolaPublicAPI --interpreter=python -- run
+    cd ../eidolapublicportal
+    # if [ ! -d "Source/eidolapublicportal/node_modules" ];then
+    #     echo "================No node_modules folder.================="
+    #     echo "=====================Installing Node dependency libraries======================="
+    #     sudo npm install
+    #         echo "====================Successfully installed Node dependency libraries==============="
+    # else
+    #     echo "==============found node_modules folder.================"
+    # fi
+    echo "============================== Starting Eidola Public Portal on localhost:4200 ========================="
+    echo
+    sudo cp nginx.conf /etc/nginx/sites-available/default
+    sudo cp cert/httpd.* /etc/ssl/certs/
+    sudo cp -r dist /usr/share/nginx/html/
+    systemctl restart nginx
+    # sudo chmod 777 node_modules
+    # sudo pm2 start
+    # sudo pm2 start node_modules/@angular/cli/bin/ng --name eidolapublicportal -- serve
+    cd ../../
+
+    while true
+    do
+        echo '1: Stop Eidola Public API'
+        echo '2: Stop Eidola Public Portal'
+        echo '3: Start All'
+        echo '4: Stop All and Exit'
+        echo '5: Run Application and Portal in Background and Exit'
+        read -p  "Choose what you want : " x
+        if [ $x == 1 ]
+        then
+            echo "Stopping Eidola Public API"
+            pm2 stop EidolaPublicAPI
+        fi
+        if [ $x == 2 ]
+        then
+            echo "Stopping Eidola Public Portal"
+            pm2 stop EidolaPublicPortal
+        fi
+
+        if  [ $x == 3 ]
+        then
+            echo "Starting Both Eidola Public API and Portal"
+            pm2 start EidolaPublicAPI
+            pm2 start EidolaPublicPortal
+        fi
+        if  [ $x == 4 ]
+        then
+            echo "Stopping Both Eidola Public API and Portal"
+            pm2 stop EidolaPublicAPI
+            pm2 stop EidolaPublicPortal
+            deactivate
+            break
+        fi
+        if  [ $x == 5 ]
+        then
+            echo "Deactivating the virtual environment"
+            deactivate
+            echo "Exiting"
+            break
+            # exit 0
+        fi
+    done
