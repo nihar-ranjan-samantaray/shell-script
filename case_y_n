@@ -1,0 +1,12 @@
+#!/bin/sh
+read -p  "Is your Python version is atleast v3.5 ?(Y/N)" answer
+case ${answer:0:1} in
+    y|Y )
+    ;;
+    * )
+    echo "Please install atleast Python v3.5 and then proceed.Exiting..."
+        exit 1
+    ;;
+esac
+
+echo "Next commands"

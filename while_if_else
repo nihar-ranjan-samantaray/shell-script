@@ -1,0 +1,32 @@
+#!/bin/bash
+while true
+do
+    echo '1: Stop Eidola Public API'
+    echo '2: Stop Eidola Public Portal'
+    echo '3: Stop Both'
+    echo '4: Exit'
+
+    read -p  "Choose what you want : " x
+
+    if [ $x == 1 ]
+    then
+        echo "Stopping Eidola Public API"
+        pm2 delete eidolapublicapi
+    fi
+    if [ $x == 2 ]
+    then
+        echo "Stopping Eidola Public Portal"
+        pm2 delete eidolapublicportal
+    fi
+    if [ $x == 3 ]
+    then
+        echo "Stopping Both Eidola Public API and Portal"
+        pm2 delete eidolapublicapi
+        pm2 delete eidolapublicportal
+    fi
+    if [ $x == 4 ]
+    then
+        deactivate
+        exit 1
+    fi
+done

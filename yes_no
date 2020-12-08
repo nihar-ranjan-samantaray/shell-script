@@ -1,0 +1,12 @@
+read -p "" a
+
+case "$a" in 
+"Y") echo "YES"
+;;
+"y") echo "YES"
+;;
+"N") echo "NO"
+;;
+"n") echo "NO"
+;;
+esac

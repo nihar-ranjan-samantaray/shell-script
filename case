@@ -1,0 +1,25 @@
+#!/bin/bash
+source ./eidola/Source/eidolapublicapi/env/bin/activate
+echo '1: Stop Eidola Public API'
+echo '2: Stop Eidola Public Portal'
+echo '3: Stop Both'
+echo '4: Exit'
+
+read -p  "Choose what you want : " x
+
+case "$x" in
+    "1" ) echo "Stopping Eidola Public API"
+          pm2 stop eidolapublicapi
+          deactivate
+    ;;
+    "2" ) echo "Stopping Eidola Public Portal"
+          pm2 stop eidolapublicapi
+          deactivate
+    ;;
+    "3" ) echo "Stopping Both Eidola Public API and Portal"
+          pm2 stop eidolapublicapi
+          deactivate
+    ;;
+    "4" ) exit 1
+    ;;
+esac
